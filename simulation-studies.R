@@ -75,8 +75,9 @@ phi <- exp(ln_phi)
 range <- sqrt(8)/exp(ln_kappa)
 sigma_O <- 1 / sqrt(4 * pi * exp(2 * ln_tau_O + 2 * ln_kappa))
 omega_s_nodes <- pars$omega_s
-# Use the index estimates as "true" abundance values
+# Use the index estimates as "true" abundance values (include scaled estimates)
 sim_true_index <- spatialindex[, 1:2]
+sim_true_index$est_scaled <- sim_true_index$est/100000000
 
 # Make prediction grid
 sim_grid <- make_prediction_grid(shape = shape, bathymetry = bathymetry,
@@ -163,13 +164,33 @@ sim_lobster_index_list <- future_lapply(lobster_list, get_nb_index_sims,
                                         area = 400, future.seed = TRUE)
 future::plan(sequential)
 
-# Simulated scallop survey indices require an adjustment before plotting
-sim_scallop_index_list <- lapply(sim_scallop_index_list, 
-                                 function(x) dplyr::mutate(x, est = as.numeric(est),
-                                                           lwr = as.numeric(lwr),
-                                                           upr = as.numeric(upr),
-                                                           log_est = as.numeric(log_est),
-                                                           se = as.numeric(se)))
+# Include scaled estimate, lower, and upper columns for each index
+# Also, scallop survey indices require explicitly numeric columns due to NA value
+sim_nb_index_list <- lapply(sim_nb_index_list, function(x) dplyr::mutate(x, est_scaled = est/100000000,
+                                                                         lwr_scaled = lwr/100000000,
+                                                                         upr_scaled = upr/100000000))
+sim_tw_index_list <- lapply(sim_tw_index_list, function(x) dplyr::mutate(x, est_scaled = est/100000000,
+                                                                         lwr_scaled = lwr/100000000,
+                                                                         upr_scaled = upr/100000000))
+sim_dg_index_list <- lapply(sim_dg_index_list, function(x) dplyr::mutate(x, est_scaled = est/100000000,
+                                                                         lwr_scaled = lwr/100000000,
+                                                                         upr_scaled = upr/100000000))
+sim_dln_index_list <- lapply(sim_dln_index_list, function(x) dplyr::mutate(x, est_scaled = est/100000000,
+                                                                           lwr_scaled = lwr/100000000,
+                                                                           upr_scaled = upr/100000000))
+sim_lobster_index_list <- lapply(sim_lobster_index_list, function(x) dplyr::mutate(x, est_scaled = est/100000000,
+                                                                                   lwr_scaled = lwr/100000000,
+                                                                                   upr_scaled = upr/100000000))
+sim_scallop_index_list <- lapply(sim_scallop_index_list, function(x) dplyr::mutate(x, est = as.numeric(est),
+                                                                                   lwr = as.numeric(lwr),
+                                                                                   upr = as.numeric(upr),
+                                                                                   log_est = as.numeric(log_est),
+                                                                                   se = as.numeric(se),
+                                                                                   est_scaled = est/100000000,
+                                                                                   lwr_scaled = lwr/100000000,
+                                                                                   upr_scaled = upr/100000000))
+
+
 # Plot the simulated indices against the true index for each scenario
 plot_sim_indices(sim_true_index$est, sim_nb_index_list)
 plot_sim_indices(sim_true_index$est, sim_tw_index_list)
@@ -179,13 +200,13 @@ plot_sim_indices(sim_true_index$est, sim_scallop_index_list)
 plot_sim_indices(sim_true_index$est, sim_lobster_index_list)
 
 # Get relative errors for each scenario
-nb_rel_errors <- get_rel_errors(sim_true_index$est, sim_nb_index_list)
-tw_rel_errors <- get_rel_errors(sim_true_index$est, sim_tw_index_list)
-dg_rel_errors <- get_rel_errors(sim_true_index$est, sim_dg_index_list)
-dln_rel_errors <- get_rel_errors(sim_true_index$est, sim_dln_index_list)
-scallop_rel_errors <- get_rel_errors(sim_true_index$est, sim_scallop_index_list)
+nb_rel_errors <- get_rel_errors(sim_true_index$est_scaled, sim_nb_index_list)
+tw_rel_errors <- get_rel_errors(sim_true_index$est_scaled, sim_tw_index_list)
+dg_rel_errors <- get_rel_errors(sim_true_index$est_scaled, sim_dg_index_list)
+dln_rel_errors <- get_rel_errors(sim_true_index$est_scaled, sim_dln_index_list)
+scallop_rel_errors <- get_rel_errors(sim_true_index$est_scaled, sim_scallop_index_list)
 scallop_rel_errors[26, ] <- rep(FALSE, 100) # Needs this manual adjustment
-lobster_rel_errors <- get_rel_errors(sim_true_index$est, sim_lobster_index_list)
+lobster_rel_errors <- get_rel_errors(sim_true_index$est_scaled, sim_lobster_index_list)
 # Calculate Mean Relative Errors for each year
 nb_MREs <- round(rowMeans(nb_rel_errors), 3)
 tw_MREs <- round(rowMeans(tw_rel_errors), 3)
@@ -199,23 +220,23 @@ MREs <- data.frame(year = 1995:2023, nb = nb_MREs, tw = tw_MREs,
                    scallop = scallop_MREs, lobster = lobster_MREs)
 
 # Calculate Root Mean Square Errors for each year
-nb_RMSEs <- get_RMSEs(sim_true_index$est, sim_nb_index_list)
-tw_RMSEs <- get_RMSEs(sim_true_index$est, sim_tw_index_list)
-dg_RMSEs <- get_RMSEs(sim_true_index$est, sim_dg_index_list)
-dln_RMSEs <- get_RMSEs(sim_true_index$est, sim_dln_index_list)
-scallop_RMSEs <- get_RMSEs(sim_true_index$est, sim_scallop_index_list)
-lobster_RMSEs <- get_RMSEs(sim_true_index$est, sim_lobster_index_list)
+nb_RMSEs <- get_RMSEs(sim_true_index$est_scaled, sim_nb_index_list)
+tw_RMSEs <- get_RMSEs(sim_true_index$est_scaled, sim_tw_index_list)
+dg_RMSEs <- get_RMSEs(sim_true_index$est_scaled, sim_dg_index_list)
+dln_RMSEs <- get_RMSEs(sim_true_index$est_scaled, sim_dln_index_list)
+scallop_RMSEs <- get_RMSEs(sim_true_index$est_scaled, sim_scallop_index_list)
+lobster_RMSEs <- get_RMSEs(sim_true_index$est_scaled, sim_lobster_index_list)
 RMSEs <- data.frame(year = 1995:2023, nb = nb_RMSEs, tw = tw_RMSEs,
                     dg = dg_RMSEs, dln = dln_RMSEs, 
                     scallop = scallop_RMSEs, lobster = lobster_RMSEs)
 
 # Calculate 95% CI coverage rates for each year
-nb_CRs <- get_CovRates(sim_true_index$est, sim_nb_index_list)
-tw_CRs <- get_CovRates(sim_true_index$est, sim_tw_index_list)
-dg_CRs <- get_CovRates(sim_true_index$est, sim_dg_index_list)
-dln_CRs <- get_CovRates(sim_true_index$est, sim_dln_index_list)
-scallop_CRs <- get_CovRates(sim_true_index$est, sim_scallop_index_list)
-lobster_CRs <- get_CovRates(sim_true_index$est, sim_lobster_index_list)
+nb_CRs <- get_CovRates(sim_true_index$est_scaled, sim_nb_index_list)
+tw_CRs <- get_CovRates(sim_true_index$est_scaled, sim_tw_index_list)
+dg_CRs <- get_CovRates(sim_true_index$est_scaled, sim_dg_index_list)
+dln_CRs <- get_CovRates(sim_true_index$est_scaled, sim_dln_index_list)
+scallop_CRs <- get_CovRates(sim_true_index$est_scaled, sim_scallop_index_list)
+lobster_CRs <- get_CovRates(sim_true_index$est_scaled, sim_lobster_index_list)
 CRs <- data.frame(year = 1995:2023, nb = nb_CRs, tw = tw_CRs,
                   dg = dg_CRs, dln = dln_CRs, 
                   scallop = scallop_CRs, lobster = lobster_CRs)
@@ -232,13 +253,12 @@ AveWidths <- data.frame(year = 1995:2023, nb = nb_widths, tw = tw_widths,
                         scallop = scallop_widths, lobster = lobster_widths)
 
 # Make perfomance metric tables (Appendix D)
-RMSEs$year <- as.character(RMSEs$year) # Adjustment for table
 # Simulation study 1
 kable(MREs[,1:5], format = "latex", digits = 3, booktabs= TRUE,
       col.names = c("Year", "Negative binomial",
                     "Tweedie", "Delta-gamma",
                     "Delta-lognormal"))
-kable(RMSEs[,1:5], format = "latex", digits = -14, booktabs= TRUE,
+kable(RMSEs[,1:5], format = "latex", digits = 3, booktabs= TRUE,
       col.names = c("Year", "Negative binomial",
                     "Tweedie", "Delta-gamma",
                     "Delta-lognormal"))
@@ -246,7 +266,7 @@ kable(CRs[,1:5], format = "latex", booktabs= TRUE,
       col.names = c("Year", "Negative binomial",
                     "Tweedie", "Delta-gamma",
                     "Delta-lognormal"))
-kable(AveWidths[,1:5], format = "latex", booktabs= TRUE,
+kable(AveWidths[,1:5], format = "latex", digits = 3, booktabs= TRUE,
       col.names = c("Year", "Negative binomial",
                     "Tweedie", "Delta-gamma",
                     "Delta-lognormal"))
@@ -254,13 +274,13 @@ kable(AveWidths[,1:5], format = "latex", booktabs= TRUE,
 kable(MREs[,c(1,2,6,7)], format = "latex", digits = 3, booktabs= TRUE,
       col.names = c("Year", "Both surveys",
                     "Scallop survey", "Lobster survey"))
-kable(RMSEs[,c(1,2,6,7)], format = "latex", digits = -14, booktabs= TRUE,
+kable(RMSEs[,c(1,2,6,7)], format = "latex", digits = 3, booktabs= TRUE,
       col.names = c("Year", "Both surveys",
                     "Scallop survey", "Lobster survey"))
 kable(CRs[,c(1,2,6,7)], format = "latex", booktabs= TRUE,
       col.names = c("Year", "Both surveys",
                     "Scallop survey", "Lobster survey"))
-kable(AveWidths[,c(1,2,6,7)], format = "latex", booktabs= TRUE,
+kable(AveWidths[,c(1,2,6,7)], format = "latex", digits = 3, booktabs= TRUE,
       col.names = c("Year", "Both surveys",
                     "Scallop survey", "Lobster survey"))
 

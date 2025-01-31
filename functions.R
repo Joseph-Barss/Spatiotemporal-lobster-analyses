@@ -228,14 +228,14 @@ get_dln_index_sims <- function(dat, mesh, grid, area){
 
 # Extract the relative errors of the simulated indices vs. the true index
 get_rel_errors <- function(true, index_list){
-  est_list <- lapply(index_list, function(x) dplyr::select(x, est))
+  est_list <- lapply(index_list, function(x) dplyr::select(x, est_scaled))
   rel_errors <- lapply(est_list, function(x) (x-true)/true)
   rel_errors <- matrix(unlist(rel_errors), ncol = 100, byrow = FALSE)
 }
 
 # Extract the RMSEs
 get_RMSEs <- function(true, index_list){
-  est_list <- lapply(index_list, function(x) dplyr::select(x, est))
+  est_list <- lapply(index_list, function(x) dplyr::select(x, est_scaled))
   sq_errors <- lapply(est_list, function(x) (x-true)^2)
   sq_errors <- matrix(unlist(sq_errors), ncol = 100, byrow = FALSE)
   RMSEs <- rowMeans(sq_errors)
@@ -243,8 +243,8 @@ get_RMSEs <- function(true, index_list){
 
 # Extract the 95% confidence interval coverage rates
 get_CovRates <- function(true, index_list){
-  lower_bounds <- lapply(index_list, function(x) dplyr::select(x, lwr))
-  upper_bounds <- lapply(index_list, function(x) dplyr::select(x, upr))
+  lower_bounds <- lapply(index_list, function(x) dplyr::select(x, lwr_scaled))
+  upper_bounds <- lapply(index_list, function(x) dplyr::select(x, upr_scaled))
   contains_true <- mapply(function(x, y) x <= true & y >= true, lower_bounds, upper_bounds, SIMPLIFY = FALSE)
   contains_true <- matrix(unlist(contains_true), ncol = 100, byrow = FALSE)
   coverage_rates <- 100*rowMeans(contains_true)
@@ -252,8 +252,8 @@ get_CovRates <- function(true, index_list){
 
 # Extract the 95% confidence interval average widths
 get_AveWidths <- function(index_list){
-  lower_bounds <- lapply(index_list, function(x) dplyr::select(x, lwr))
-  upper_bounds <- lapply(index_list, function(x) dplyr::select(x, upr))
+  lower_bounds <- lapply(index_list, function(x) dplyr::select(x, lwr_scaled))
+  upper_bounds <- lapply(index_list, function(x) dplyr::select(x, upr_scaled))
   widths <- mapply(function(x, y) y-x, lower_bounds, upper_bounds, SIMPLIFY = FALSE)
   widths <- matrix(unlist(widths), ncol = 100, byrow = FALSE)
   ave_widths <- rowMeans(widths)
