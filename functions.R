@@ -283,12 +283,8 @@ plot_resids_spatial <- function(data, plot_type = c("histogram", "qq-plot", "map
 }
 
 # Map the predicted abundance, standard deviation, coefficient of variation, or random field values
-plot_map <- function(dat, years = "all", return = c("link", "response", "spatial", "spatiotemporal", "sd", "cv")) {
-  if(return == "link"){
-    dat$response <- dat$est
-    label = "Log counts"
-    trans = "identity"
-  } else if (return == "spatial") {
+plot_map <- function(dat, years = "all", return = c("response", "spatial", "spatiotemporal", "sd", "cv")) {
+  if (return == "spatial") {
     dat$response <- dat$omega_s
     label = "Spatial RF"
     trans = "identity"
@@ -299,13 +295,13 @@ plot_map <- function(dat, years = "all", return = c("link", "response", "spatial
   } else if (return == "sd"){
     dat$response <- dat$sd
     label = "Standard Deviation"
-    trans = "identity"
+    trans = "log10"
   } else if (return == "cv"){
     dat$response <- dat$cv
     label = "Coefficient of Variation"
     trans = "identity"
   } else {
-    dat$response <- exp(dat$est)
+    dat$response <- dat$est
     label = "Response (counts)"
     trans = "log10"
   }
@@ -328,7 +324,7 @@ plot_index <- function(dat){
   p <- ggplot(dat, aes(year, est)) + geom_line() +
     geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
     labs(x = "Year", y = "Index value")+
-    scale_y_continuous(labels = c(0, 1, 2, 3, 4))+
+    scale_y_continuous(labels=function(x)x/100000000)+
     theme_light()
   return(p)
 }

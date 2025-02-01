@@ -102,18 +102,18 @@ samps <- sdmTMBextra::extract_mcmc(stanmod)
 pred_grid_bayes <- grid_yrs
 pred_bayes <- predict(mod_for_tmbstan, newdata = pred_grid_bayes, 
                       offset = pred_grid_bayes$area_km2, mcmc_samples = samps)
-pred_grid_bayes$est <- apply(pred_bayes, 1, mean)
-pred_grid_bayes$sd <- apply(pred_bayes, 1, sd)
+pred_grid_bayes$est <- apply(exp(pred_bayes), 1, mean)
+pred_grid_bayes$sd <- apply(exp(pred_bayes), 1, sd)
+pred_grid_bayes$lwr <- apply(exp(pred_bayes), 1, quantile, probs = 0.025)
+pred_grid_bayes$upr <- apply(exp(pred_bayes), 1, quantile, probs = 0.975)
 # Map the predictions and SDs
 plot_map(pred_grid_bayes, years = 2023, return = "response")
-plot_map(pred_grid_bayes, years = 2023, return = "link")
 plot_map(pred_grid_bayes, years = 2023, return = "sd")
-# Make Bayesian index
+# Make an abundance index with 95% credible band
 bayes_index <- pred_grid_bayes %>% 
   group_by(year) %>% 
-  summarise(est = 400*sum(exp(est)))
-# Plot Bayesian index
-ggplot(bayes_index, aes(year, est)) + geom_line() +
-  labs(x = "Year", y = "Index value")+
-  scale_y_continuous(labels = c(0, 1, 2, 3))+
-  theme_light()
+  summarise(est = 400*sum(est),
+            lwr = 400*sum(lwr),
+            upr = 400*sum(upr))
+# Plot the index
+plot_index(bayes_index)
