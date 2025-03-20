@@ -102,18 +102,28 @@ samps <- sdmTMBextra::extract_mcmc(stanmod)
 pred_grid_bayes <- grid_yrs
 pred_bayes <- predict(mod_for_tmbstan, newdata = pred_grid_bayes, 
                       offset = pred_grid_bayes$area_km2, mcmc_samples = samps)
-pred_grid_bayes$est <- apply(exp(pred_bayes), 1, mean)
-pred_grid_bayes$sd <- apply(exp(pred_bayes), 1, sd)
-pred_grid_bayes$lwr <- apply(exp(pred_bayes), 1, quantile, probs = 0.025)
-pred_grid_bayes$upr <- apply(exp(pred_bayes), 1, quantile, probs = 0.975)
+pred_grid_bayes$est <- apply(pred_bayes, 1, mean)
+pred_grid_bayes$sd <- apply(pred_bayes, 1, sd)
+
 # Map the predictions and SDs
 plot_map(pred_grid_bayes, years = 2023, return = "response")
+plot_map(pred_grid_bayes, years = 2023, return = "link")
 plot_map(pred_grid_bayes, years = 2023, return = "sd")
-# Make an abundance index with 95% credible band
-bayes_index <- pred_grid_bayes %>% 
-  group_by(year) %>% 
-  summarise(est = 400*sum(est),
-            lwr = 400*sum(lwr),
-            upr = 400*sum(upr))
-# Plot the index
-plot_index(bayes_index)
+
+# Make Bayesian index
+pred_bayes <- as_tibble(pred_bayes, rownames = "Year")
+pred_abun <- pred_bayes %>%
+  mutate(across("V1":"V8000", exp), .keep = "unused") %>% 
+  group_by(Year) %>% 
+  summarise(across("V1":"V8000", sum)) %>% 
+  dplyr::select(-Year)
+bayes_index <- data.frame(year = 1995:2023,
+                          est = 400*apply(pred_abun, 1, mean),
+                          lwr = 400*apply(pred_abun, 1, quantile, probs = 0.025),
+                          upr = 400*apply(pred_abun, 1, quantile, probs = 0.975))
+# Plot Bayesian index
+ggplot(bayes_index, aes(year, est)) + geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
+  labs(x = "Year", y = "Index value")+
+  scale_y_continuous(labels = c(0, 1, 2, 3, 4, 5))+
+  theme_light()
