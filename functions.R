@@ -283,8 +283,15 @@ plot_resids_spatial <- function(data, plot_type = c("histogram", "qq-plot", "map
 }
 
 # Map the predicted abundance, standard deviation, coefficient of variation, or random field values
-plot_map <- function(dat, years = "all", return = c("response", "spatial", "spatiotemporal", "sd", "cv")) {
-  if (return == "spatial") {
+plot_map <- function(dat, years = "all", 
+                     return = c("link", "response", "spatial", "spatiotemporal", 
+                                "sd", "cv", "bayes", "bayesSD"),
+                     axes = TRUE) {
+  if(return == "link"){
+    dat$response <- dat$est
+    label = "Log counts"
+    trans = "identity"
+  } else if (return == "spatial") {
     dat$response <- dat$omega_s
     label = "Spatial RF"
     trans = "identity"
@@ -295,13 +302,21 @@ plot_map <- function(dat, years = "all", return = c("response", "spatial", "spat
   } else if (return == "sd"){
     dat$response <- dat$sd
     label = "Standard Deviation"
-    trans = "log10"
+    trans = "identity"
   } else if (return == "cv"){
     dat$response <- dat$cv
     label = "Coefficient of Variation"
     trans = "identity"
-  } else {
+  } else if (return == "bayes") {
     dat$response <- dat$est
+    label = "Response (counts)"
+    trans = "log10"
+  } else if (return == "bayesSD") {
+    dat$response <- dat$sd
+    label = "Standard Deviation"
+    trans = "log10"
+  } else {
+    dat$response <- exp(dat$est)
     label = "Response (counts)"
     trans = "log10"
   }
@@ -316,6 +331,12 @@ plot_map <- function(dat, years = "all", return = c("response", "spatial", "spat
     scale_fill_viridis_c(option = "B", direction = -1, transform = trans)+
     labs(x = "Longitude", y = "Latitude", fill = label)+
     theme_light()
+  if(axes == FALSE){
+    p <- p+theme(axis.line=element_blank(),axis.text.x=element_blank(),
+                 axis.text.y=element_blank(),axis.ticks=element_blank(),
+                 axis.title.x=element_blank(),
+                 axis.title.y=element_blank())
+  }
   return(p)
 }
 

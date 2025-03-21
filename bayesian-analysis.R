@@ -99,16 +99,15 @@ mean(sigma_O_b)
 # Make predictions and SDs on the grid using the Bayesian model
 set.seed(300)
 samps <- sdmTMBextra::extract_mcmc(stanmod)
-pred_grid_bayes <- grid_yrs
+pred_grid_bayes23 <- cbind(grid, year = 2023)
 pred_bayes <- predict(mod_for_tmbstan, newdata = pred_grid_bayes, 
                       offset = pred_grid_bayes$area_km2, mcmc_samples = samps)
-pred_grid_bayes$est <- apply(pred_bayes, 1, mean)
-pred_grid_bayes$sd <- apply(pred_bayes, 1, sd)
+pred_grid_bayes23$est <- apply(exp(pred_bayes[229237:237423, ]), 1, mean)
+pred_grid_bayes23$sd <- apply(exp(pred_bayes[229237:237423, ]), 1, sd)
 
 # Map the predictions and SDs
-plot_map(pred_grid_bayes, years = 2023, return = "response")
-plot_map(pred_grid_bayes, years = 2023, return = "link")
-plot_map(pred_grid_bayes, years = 2023, return = "sd")
+plot_map(pred_grid_bayes23, years = 2023, return = "bayes")
+plot_map(pred_grid_bayes23, years = 2023, return = "bayesSD")
 
 # Make Bayesian index
 pred_bayes <- as_tibble(pred_bayes, rownames = "Year")

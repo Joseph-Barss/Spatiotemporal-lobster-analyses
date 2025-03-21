@@ -75,7 +75,7 @@ ggplot(lobster_data, aes(fct_relevel(month, "5"), fill = fct_rev(gear)))+
   scale_fill_viridis_d(option = "D", direction = -1)+
   theme_light()
 
-# Map fo tows by gear type
+# Map of tows by gear type
 ggplot(map_fundy) + geom_sf() +
   geom_point(data = lobster_data, aes(x = X * 1000, y = Y * 1000, col = fct_rev(gear)), alpha = 0.4, size = 0.01) +
   scale_colour_viridis_d(option = "D", direction = -1)+
@@ -217,10 +217,10 @@ spatialindex <- get_index(spatialpreds, area = 400, bias_correct = TRUE)
 plot_index(spatialindex)
 
 # Plot for all years (Appendix A)
-plot_map(spatialpreds$data, return = "response")
-plot_map(spatialpreds$data, return = "spatial")
-plot_map(spatialpreds$data, return = "sd")
-plot_map(spatialpreds$data, return = "cv")
+plot_map(spatialpreds$data, return = "response", axes = FALSE)
+plot_map(spatialpreds$data, return = "spatial", axes = FALSE)
+plot_map(spatialpreds$data, return = "sd", axes = FALSE)
+plot_map(spatialpreds$data, return = "cv", axes = FALSE)
 
 # An alternative model uses a smooth term on depth (Appendix B)
 spatmodsmooth <- sdmTMB(count ~ 0+year_fac+s(depth)+gear+moult, data = lobster_data,
