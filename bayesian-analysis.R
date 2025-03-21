@@ -55,7 +55,7 @@ barrier_mesh <- make_barrier_mesh(lobster_data, map_data)
 
 #### Fit model with priors
 mod_for_tmbstan <- sdmTMB(count ~ 0+year_fac+logdepth+gear+moult, data = lobster_data,
-                          mesh = barrier_mesh, family = nbinom2(), offset = "area_km2",
+                          mesh = barrier_mesh, family = nbinom2(), offset = "log_area",
                           time = "year", spatial = "on", spatiotemporal = "off",
                           bayesian = TRUE,
                           priors = sdmTMBpriors(
@@ -101,7 +101,7 @@ set.seed(300)
 samps <- sdmTMBextra::extract_mcmc(stanmod)
 pred_grid_bayes23 <- cbind(grid, year = 2023)
 pred_bayes <- predict(mod_for_tmbstan, newdata = pred_grid_bayes, 
-                      offset = pred_grid_bayes$area_km2, mcmc_samples = samps)
+                      offset = pred_grid_bayes$log_area, mcmc_samples = samps)
 pred_grid_bayes23$est <- apply(exp(pred_bayes[229237:237423, ]), 1, mean)
 pred_grid_bayes23$sd <- apply(exp(pred_bayes[229237:237423, ]), 1, sd)
 

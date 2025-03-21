@@ -39,6 +39,7 @@ read_count_data <- function(shape, bathymetry){
     mutate(gear = fct(gear, levels = c("NEST", "280 BALLOON", "DREDGE")), 
            moult = fct_rev(fct_collapse(month, Post = c("8", "9", "10"), Pre = c("5", "6", "7"))),
            .before = area_km2) %>% 
+    mutate(log_area = log(area_km2), .after = area_km2) %>% 
     mutate(count_per_km2 = count/area_km2)
   # Add UTM columns to data
   crs_UTM20N <- 32620
@@ -72,6 +73,7 @@ make_prediction_grid <- function(shape, bathymetry, density_m = 2000, sweptarea 
   grid_depths <- terra::extract(bathymetry, sp_grid)
   grid <- mutate(grid, "depth" = -grid_depths[, 2], .before = gear)
   grid <- mutate(grid, "area_km2" = sweptarea)
+  grid <- mutate(grid, "log_area" = log(sweptarea))
   grid <- grid[!is.na(grid$depth) & grid$depth > depth_cutoff,] # don't want too shallow
   grid <- mutate(grid, "logdepth" = log(depth), .after = depth)
   return(grid)
@@ -98,7 +100,7 @@ make_barrier_mesh <- function(dat, map){
 # Simulates negative binomial-distributed count data at all sampling locations
 get_nb_sims <- function(template, mesh){
   sim_dat <- sdmTMB_simulate(~0+year_fac+logdepth+gear+moult, template, mesh, family = nbinom2(link = "log"),
-                             offset = "area_km2", time = "year", B = betas, range = range, sigma_O = sigma_O,
+                             offset = "log_area", time = "year", B = betas, range = range, sigma_O = sigma_O,
                              phi = phi,
                              spatiotemporal = "off",
                              fixed_re = list(omega_s = omega_s_nodes
@@ -110,6 +112,7 @@ get_nb_sims <- function(template, mesh){
   sim_dat$moult <- template$moult
   sim_dat <- rename(sim_dat, count = observed)
   sim_dat$area_km2 <- template$area_km2
+  sim_dat$log_area <- template$log_area
   sim_dat$count_per_km2 <- sim_dat$count/sim_dat$area_km2
   return(sim_dat)
 }
@@ -117,7 +120,7 @@ get_nb_sims <- function(template, mesh){
 # Simulates negative binomial-distributed count data at scallop survey locations
 get_scallop_sims <- function(template, mesh){
   sim_dat <- sdmTMB_simulate(~0+year_fac+logdepth+moult, template, mesh, family = nbinom2(link = "log"),
-                             offset = "area_km2", time = "year", 
+                             offset = "log_area", time = "year", 
                              B = betas[c(1:25, 27:30, 33)], # No gear, and 2020 missing 
                              range = range, sigma_O = sigma_O, 
                              phi = phi,
@@ -138,7 +141,7 @@ get_scallop_sims <- function(template, mesh){
 # Simulates negative binomial-distributed count data at lobster survey locations
 get_lobster_sims <- function(template, mesh){
   sim_dat <- sdmTMB_simulate(~0+year_fac+logdepth+gear+moult, template, mesh, family = nbinom2(link = "log"),
-                             offset = "area_km2", time = "year", B = betas[c(1:31, 33)], range = range, sigma_O = sigma_O,
+                             offset = "log_area", time = "year", B = betas[c(1:31, 33)], range = range, sigma_O = sigma_O,
                              phi = phi,
                              spatiotemporal = "off",
                              fixed_re = list(omega_s = omega_s_nodes
@@ -157,7 +160,7 @@ get_lobster_sims <- function(template, mesh){
 # Simulates abundance index using negative binomial model
 get_nb_index_sims <- function(dat, mesh, grid, area){
   sim_mod_nb <- sdmTMB(count ~ 0+year_fac+logdepth+gear+moult, data = dat,
-                       mesh = mesh, family = nbinom2(), offset = "area_km2", time = "year",
+                       mesh = mesh, family = nbinom2(), offset = "log_area", time = "year",
                        spatial = "on", spatiotemporal = "off", do_index = TRUE, 
                        predict_args = list(newdata = grid, offset = grid$area_km2), index_args = list(area = area))
   gc()
@@ -170,7 +173,7 @@ get_nb_index_sims <- function(dat, mesh, grid, area){
 # Simulates abundance index using negative binomial model, with adjustment for missing year
 get_scallop_index_sims <- function(dat, mesh, grid, area){
   sim_mod_scallop <- sdmTMB(count ~ 0+year_fac+logdepth+moult, data = dat,
-                            mesh = mesh, family = nbinom2(), offset = "area_km2", time = "year",
+                            mesh = mesh, family = nbinom2(), offset = "log_area", time = "year",
                             spatial = "on", spatiotemporal = "off", do_index = TRUE, 
                             predict_args = list(newdata = grid, offset = grid$area_km2), index_args = list(area = area))
   gc()

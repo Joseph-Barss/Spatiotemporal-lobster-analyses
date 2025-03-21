@@ -58,11 +58,11 @@ barrier_mesh <- make_barrier_mesh(lobster_data, map_data)
 
 # Fit the chosen model with the spatial random field
 spatmod <- sdmTMB(count ~ 0+year_fac+logdepth+gear+moult, data = lobster_data,
-                  mesh = barrier_mesh, family = nbinom2(), offset = "area_km2",
+                  mesh = barrier_mesh, family = nbinom2(), offset = "log_area",
                   time = "year", spatial = "on", spatiotemporal = "off")
 # Make predictions on a grid
 spatialpreds <- predict(spatmod, newdata = grid_yrs, type = "link", 
-                        offset = grid_yrs$area_km2, return_tmb_object = TRUE)
+                        offset = grid_yrs$log_area, return_tmb_object = TRUE)
 # Create abundance index
 spatialindex <- get_index(spatialpreds, area = 400, bias_correct = TRUE)
 # Extract parameters from the spatial model, making required transformations

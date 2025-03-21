@@ -113,23 +113,23 @@ plot(barrier_mesh)
 
 # Model with no random fields
 norfmod <- sdmTMB(count ~ 0+year_fac+logdepth+gear+moult, data = lobster_data,
-                  mesh = barrier_mesh, family = nbinom2(), offset = "area_km2",
+                  mesh = barrier_mesh, family = nbinom2(), offset = "log_area",
                   time = "year", spatial = "off", spatiotemporal = "off")
 # Model with spatial random field
 spatmod <- sdmTMB(count ~ 0+year_fac+logdepth+gear+moult, data = lobster_data,
-                  mesh = barrier_mesh, family = nbinom2(), offset = "area_km2",
+                  mesh = barrier_mesh, family = nbinom2(), offset = "log_area",
                   time = "year", spatial = "on", spatiotemporal = "off")
 # Model with IID spatiotemporal random fields
 iidmod <- sdmTMB(count ~ 0+year_fac+logdepth+gear+moult, data = lobster_data,
-                 mesh = barrier_mesh, family = nbinom2(), offset = "area_km2",
+                 mesh = barrier_mesh, family = nbinom2(), offset = "log_area",
                  time = "year", spatial = "on", spatiotemporal = "iid")
 # Model with random walk spatiotemporal random fields
 rwmod <- sdmTMB(count ~ 0+year_fac+logdepth+gear+moult, data = lobster_data,
-                mesh = barrier_mesh, family = nbinom2(), offset = "area_km2",
+                mesh = barrier_mesh, family = nbinom2(), offset = "log_area",
                 time = "year", spatial = "on", spatiotemporal = "rw")
 # Model with AR(1) spatiotemporal random fields
 ar1mod <- sdmTMB(count ~ 0+year_fac+logdepth+gear+moult, data = lobster_data,
-                 mesh = barrier_mesh, family = nbinom2(), offset = "area_km2",
+                 mesh = barrier_mesh, family = nbinom2(), offset = "log_area",
                  time = "year", spatial = "on", spatiotemporal = "ar1")
 
 # Check marginal AICs
@@ -152,27 +152,27 @@ cv_plot(spatial_blocks, lobster_dat_sf)
 plan(multisession, workers = 5)
 # No random fields
 norf_cv <- sdmTMB_cv(count ~ 0+year_fac+logdepth+gear+moult, data = lobster_data,
-                     mesh = barrier_mesh, family = nbinom2(), offset = "area_km2",
+                     mesh = barrier_mesh, family = nbinom2(), offset = "log_area",
                      time = "year", spatial = "off", spatiotemporal = "off", parallel = TRUE, 
                      fold_ids = spatial_blocks$folds_ids)
 # Spatial random field
 spat_cv <- sdmTMB_cv(count ~ 0+year_fac+logdepth+gear+moult, data = lobster_data,
-                     mesh = barrier_mesh, family = nbinom2(), offset = "area_km2",
+                     mesh = barrier_mesh, family = nbinom2(), offset = "log_area",
                      time = "year", spatial = "on", spatiotemporal = "off", parallel = TRUE, 
                      fold_ids = spatial_blocks$folds_ids)
 # IID random fields
 iid_cv <- sdmTMB_cv(count ~ 0+year_fac+logdepth+gear+moult, data = lobster_data,
-                    mesh = barrier_mesh, family = nbinom2(), offset = "area_km2",
+                    mesh = barrier_mesh, family = nbinom2(), offset = "log_area",
                     time = "year", spatial = "on", spatiotemporal = "iid", parallel = TRUE, 
                     fold_ids = spatial_blocks$folds_ids)
 # Random walk random fields
 rw_cv <- sdmTMB_cv(count ~ 0+year_fac+logdepth+gear+moult, data = lobster_data,
-                   mesh = barrier_mesh, family = nbinom2(), offset = "area_km2",
+                   mesh = barrier_mesh, family = nbinom2(), offset = "log_area",
                    time = "year", spatial = "on", spatiotemporal = "rw", parallel = TRUE, 
                    fold_ids = spatial_blocks$folds_ids)
 # AR(1) random fields
 ar1_cv <- sdmTMB_cv(count ~ 0+year_fac+logdepth+gear+moult, data = lobster_data,
-                    mesh = barrier_mesh, family = nbinom2(), offset = "area_km2",
+                    mesh = barrier_mesh, family = nbinom2(), offset = "log_area",
                     time = "year", spatial = "on", spatiotemporal = "ar1", parallel = TRUE, 
                     fold_ids = spatial_blocks$folds_ids)
 plan(sequential)
@@ -199,12 +199,12 @@ plot_resids_spatial(lobster_data, plot_type = "map")
 
 # Make predictions on a grid
 spatialpreds <- predict(spatmod, newdata = grid_yrs, type = "response", 
-                        offset = grid_yrs$area_km2, return_tmb_object = TRUE)
+                        offset = grid_yrs$log_area, return_tmb_object = TRUE)
 # Map the predictions (response scale) and spatial random field (link scale)
 plot_map(spatialpreds$data, years = 2023, return = "response")
 plot_map(spatialpreds$data, years = 2023, return = "spatial")
 # Make the SD and CV for the predictions using simulations
-sims <- predict(spatmod, newdata = grid_yrs, type = "link", offset = grid_yrs$area_km2, nsim = 100)
+sims <- predict(spatmod, newdata = grid_yrs, type = "link", offset = grid_yrs$log_area, nsim = 100)
 spatialpreds$data$sd <- round(apply(exp(sims), 1, function(x) sd(x)), 2)
 spatialpreds$data$cv <- round(apply(exp(sims), 1, function(x) sd(x) / mean(x)), 2)
 # Map the SD and CV
@@ -224,7 +224,7 @@ plot_map(spatialpreds$data, return = "cv", axes = FALSE)
 
 # An alternative model uses a smooth term on depth (Appendix B)
 spatmodsmooth <- sdmTMB(count ~ 0+year_fac+s(depth)+gear+moult, data = lobster_data,
-                        mesh = barrier_mesh, family = nbinom2(), offset = "area_km2",
+                        mesh = barrier_mesh, family = nbinom2(), offset = "log_area",
                         time = "year", spatial = "on", spatiotemporal = "off")
 summary(spatmodsmooth)
 smoothplot <- visreg(spatmodsmooth, xvar = "depth", data = lobster_data, gg = TRUE)
