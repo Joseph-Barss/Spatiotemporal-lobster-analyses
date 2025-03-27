@@ -134,6 +134,7 @@ get_scallop_sims <- function(template, mesh){
   sim_dat$moult <- template$moult
   sim_dat <- rename(sim_dat, count = observed)
   sim_dat$area_km2 <- template$area_km2
+  sim_dat$log_area <- template$log_area
   sim_dat$count_per_km2 <- sim_dat$count/sim_dat$area_km2
   return(sim_dat)
 }
@@ -153,6 +154,7 @@ get_lobster_sims <- function(template, mesh){
   sim_dat$moult <- template$moult
   sim_dat <- rename(sim_dat, count = observed)
   sim_dat$area_km2 <- template$area_km2
+  sim_dat$log_area <- template$log_area
   sim_dat$count_per_km2 <- sim_dat$count/sim_dat$area_km2
   return(sim_dat)
 }
@@ -162,7 +164,7 @@ get_nb_index_sims <- function(dat, mesh, grid, area){
   sim_mod_nb <- sdmTMB(count ~ 0+year_fac+logdepth+gear+moult, data = dat,
                        mesh = mesh, family = nbinom2(), offset = "log_area", time = "year",
                        spatial = "on", spatiotemporal = "off", do_index = TRUE, 
-                       predict_args = list(newdata = grid, offset = grid$area_km2), index_args = list(area = area))
+                       predict_args = list(newdata = grid, offset = grid$log_area), index_args = list(area = area))
   gc()
   sim_nb_index <- get_index(sim_mod_nb, bias_correct = TRUE)
   rm(sim_mod_nb)
@@ -175,7 +177,7 @@ get_scallop_index_sims <- function(dat, mesh, grid, area){
   sim_mod_scallop <- sdmTMB(count ~ 0+year_fac+logdepth+moult, data = dat,
                             mesh = mesh, family = nbinom2(), offset = "log_area", time = "year",
                             spatial = "on", spatiotemporal = "off", do_index = TRUE, 
-                            predict_args = list(newdata = grid, offset = grid$area_km2), index_args = list(area = area))
+                            predict_args = list(newdata = grid, offset = grid$log_area), index_args = list(area = area))
   gc()
   scallop_index <- get_index(sim_mod_scallop, bias_correct = TRUE)
   rm(sim_mod_scallop)
@@ -355,7 +357,7 @@ plot_index <- function(dat){
 
 # Plot the simulated indices against the true index
 plot_sim_indices <- function(true, index_list){
-  est_list <- lapply(index_list, function(x) dplyr::select(x, est))
+  est_list <- lapply(index_list, function(x) dplyr::select(x, est_scaled))
   dat <- data.frame(year = 1995:2023, true = true)
   for(i in seq(length(est_list))){
     est <- est_list[[i]]
@@ -367,8 +369,8 @@ plot_sim_indices <- function(true, index_list){
   p <- ggplot()+
     geom_line(data = dat[dat[ , 2] != "true", ], mapping = aes(year, index, col = series, alpha = 0.2)) +
     geom_line(data = dat[dat[ , 2] == "true", ], mapping = aes(year, index), colour = "black", linewidth = 2)+
-    scale_y_continuous(breaks = c(0, 1e+08, 2e+08, 3e+08, 4e+08, 5e+08),
-                       labels = c(0, 1, 2, 3, 4, 5))+
+    scale_y_continuous(breaks = c(0, 1, 2, 3, 4, 5, 6),
+                       labels = c(0, 1, 2, 3, 4, 5, 6))+
     theme_light()+
     theme(legend.position="none")+
     labs(x = "Year", y = "Index value")

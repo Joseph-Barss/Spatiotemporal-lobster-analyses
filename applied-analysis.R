@@ -198,7 +198,7 @@ plot_resids_spatial(lobster_data, plot_type = "qq-plot")
 plot_resids_spatial(lobster_data, plot_type = "map")
 
 # Make predictions on a grid
-spatialpreds <- predict(spatmod, newdata = grid_yrs, type = "response", 
+spatialpreds <- predict(spatmod, newdata = grid_yrs, type = "link", 
                         offset = grid_yrs$log_area, return_tmb_object = TRUE)
 # Map the predictions (response scale) and spatial random field (link scale)
 plot_map(spatialpreds$data, years = 2023, return = "response")

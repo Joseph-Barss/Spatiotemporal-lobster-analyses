@@ -59,7 +59,7 @@ mod_for_tmbstan <- sdmTMB(count ~ 0+year_fac+logdepth+gear+moult, data = lobster
                           time = "year", spatial = "on", spatiotemporal = "off",
                           bayesian = TRUE,
                           priors = sdmTMBpriors(
-                            b = normal(c(rep(5, 29), -1, 0, 0, 0), c(rep(2, 29), 1, 3, 3, 3)),
+                            b = normal(c(rep(10, 29), -1, 0, 0, 0), c(rep(2, 29), 1, 3, 3, 3)),
                             phi = halfnormal(0, 10),
                             matern_s = pc_matern(range_gt = 50, sigma_lt = 35)
                           ))
@@ -99,11 +99,12 @@ mean(sigma_O_b)
 # Make predictions and SDs on the grid using the Bayesian model
 set.seed(300)
 samps <- sdmTMBextra::extract_mcmc(stanmod)
-pred_grid_bayes23 <- cbind(grid, year = 2023)
-pred_bayes <- predict(mod_for_tmbstan, newdata = pred_grid_bayes, 
-                      offset = pred_grid_bayes$log_area, mcmc_samples = samps)
+pred_grid_bayes23 <- dplyr::filter(grid_yrs, year == 2023)
+pred_bayes <- predict(mod_for_tmbstan, newdata = grid_yrs, 
+                      offset = grid_yrs$log_area, mcmc_samples = samps)
 pred_grid_bayes23$est <- apply(exp(pred_bayes[229237:237423, ]), 1, mean)
 pred_grid_bayes23$sd <- apply(exp(pred_bayes[229237:237423, ]), 1, sd)
+
 
 # Map the predictions and SDs
 plot_map(pred_grid_bayes23, years = 2023, return = "bayes")

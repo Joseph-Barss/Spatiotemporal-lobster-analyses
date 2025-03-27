@@ -192,12 +192,12 @@ sim_scallop_index_list <- lapply(sim_scallop_index_list, function(x) dplyr::muta
 
 
 # Plot the simulated indices against the true index for each scenario
-plot_sim_indices(sim_true_index$est, sim_nb_index_list)
-plot_sim_indices(sim_true_index$est, sim_tw_index_list)
-plot_sim_indices(sim_true_index$est, sim_dg_index_list)
-plot_sim_indices(sim_true_index$est, sim_dln_index_list)
-plot_sim_indices(sim_true_index$est, sim_scallop_index_list)
-plot_sim_indices(sim_true_index$est, sim_lobster_index_list)
+plot_sim_indices(sim_true_index$est_scaled, sim_nb_index_list)
+plot_sim_indices(sim_true_index$est_scaled, sim_tw_index_list)
+plot_sim_indices(sim_true_index$est_scaled, sim_dg_index_list)
+plot_sim_indices(sim_true_index$est_scaled, sim_dln_index_list)
+plot_sim_indices(sim_true_index$est_scaled, sim_scallop_index_list)
+plot_sim_indices(sim_true_index$est_scaled, sim_lobster_index_list)
 
 # Get relative errors for each scenario
 nb_rel_errors <- get_rel_errors(sim_true_index$est_scaled, sim_nb_index_list)
